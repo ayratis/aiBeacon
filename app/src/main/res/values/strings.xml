@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">aiBeacon</string>
+    <string name="cant_work_without_bt">can not work without BlueTooth</string>
+    <string name="cant_work_without_location">can not work without location permission</string>
+    <string name="ble_device">mac: %1$s \n rssi: %2$s</string>
+    <string name="beacon">uuid: %1$s \n major: %2$s \n minor: %3$s \n txPower: %4$s \n distance: %5$s \n rssi: %6$s</string>
+</resources>
