@@ -38,17 +38,19 @@ public class DevicesListAdapter extends RecyclerView.Adapter<DevicesListAdapter.
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
 
         if (bluetoothDeviceList.get(i).getType() == TYPE_IBEACON) {
-            viewHolder.deviceParams.setText(viewHolder.deviceParams.getContext().getString(R.string.beacon,
-                    bluetoothDeviceList.get(i).getBeacon().getId1().toString(),
-                    String.valueOf(bluetoothDeviceList.get(i).getBeacon().getId2().toInt()),
-                    String.valueOf(bluetoothDeviceList.get(i).getBeacon().getId3().toInt()),
-                    String.valueOf(bluetoothDeviceList.get(i).getBeacon().getTxPower()),
-                    String.valueOf(bluetoothDeviceList.get(i).getBeacon().getDistance()),
-                    String.valueOf(bluetoothDeviceList.get(i).getBeacon().getRssi())));
+            viewHolder.deviceParams
+                    .setText(viewHolder.deviceParams.getContext().getString(R.string.beacon,
+                            bluetoothDeviceList.get(i).getBeacon().getId1().toString(),
+                            String.valueOf(bluetoothDeviceList.get(i).getBeacon().getId2().toInt()),
+                            String.valueOf(bluetoothDeviceList.get(i).getBeacon().getId3().toInt()),
+                            String.valueOf(bluetoothDeviceList.get(i).getBeacon().getTxPower()),
+                            String.valueOf(bluetoothDeviceList.get(i).getBeacon().getDistance()),
+                            String.valueOf(bluetoothDeviceList.get(i).getBeacon().getRssi())));
         } else {
-            viewHolder.deviceParams.setText(viewHolder.deviceParams.getContext().getString(R.string.ble_device,
-                    bluetoothDeviceList.get(i).getDevice().getAddress(),
-                    String.valueOf(bluetoothDeviceList.get(i).getDeviceRssi())));
+            viewHolder.deviceParams
+                    .setText(viewHolder.deviceParams.getContext().getString(R.string.ble_device,
+                            bluetoothDeviceList.get(i).getDevice().getAddress(),
+                            String.valueOf(bluetoothDeviceList.get(i).getDeviceRssi())));
         }
     }
 
@@ -64,14 +66,14 @@ public class DevicesListAdapter extends RecyclerView.Adapter<DevicesListAdapter.
                     if (device.getAddress().equals(bluetoothDeviceList.get(i).getDevice().getAddress())) {
                         bluetoothDeviceList.get(i).setDevice(device);
                         bluetoothDeviceList.get(i).setDeviceRssi(rssi);
-                        Collections.sort(bluetoothDeviceList, (o1, o2) ->
-                                (o2.getDeviceRssi() - o1.getDeviceRssi()));
+                        Collections.sort(bluetoothDeviceList, (o1, o2) -> (o2.getDeviceRssi() - o1.getDeviceRssi()));
                         notifyDataSetChanged();
                         return;
                     }
                 }
             }
         }
+
         UniversalDeviceModel universalDeviceModel = new UniversalDeviceModel();
         universalDeviceModel.setType(TYPE_BLE);
         universalDeviceModel.setDevice(device);
@@ -87,16 +89,14 @@ public class DevicesListAdapter extends RecyclerView.Adapter<DevicesListAdapter.
                     if (beacon.getId1().equals(bluetoothDeviceList.get(i).getBeacon().getId1())) {
                         bluetoothDeviceList.get(i).setBeacon(beacon);
                         bluetoothDeviceList.get(i).setDeviceRssi(beacon.getRssi());
-                        Collections.sort(bluetoothDeviceList, (o1, o2) ->
-                                (o2.getDeviceRssi() - o1.getDeviceRssi()));
+                        Collections.sort(bluetoothDeviceList, (o1, o2) -> (o2.getDeviceRssi() - o1.getDeviceRssi()));
                         notifyDataSetChanged();
                         return;
                     }
                 }
-
             }
-
         }
+
         UniversalDeviceModel universalDeviceModel = new UniversalDeviceModel();
         universalDeviceModel.setType(TYPE_IBEACON);
         universalDeviceModel.setBeacon(beacon);
@@ -107,6 +107,7 @@ public class DevicesListAdapter extends RecyclerView.Adapter<DevicesListAdapter.
 
     public void clear() {
         bluetoothDeviceList.clear();
+        notifyDataSetChanged();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {

@@ -26,23 +26,22 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int MY_LOCATION_REQUEST_CODE = 11;
+    private static final String REGION_UUID = "e9131178-4833-41cd-af5b-9d132f4d3770";
+    private static final String IBEACON_LAYOUT = "m:2-3=0215,i:4-19,i:20-21;i:22-23,p:24-24";
+//    private static final String ALTBEACON_LAYOUT = "m:2-3=beac,i:4-19,i:20-21;i:22-23,p:24-24,d:25-25";
 
     private RecyclerView devicesRecycler;
     private Button scanButton;
 
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
+    private DevicesListAdapter devicesListAdapter;
+    private BluetoothAdapter.LeScanCallback leScanCallback;
 
-    private boolean isScanning = false;
-
-    private static final String IBEACON_LAYOUT = "m:2-3=0215,i:4-19,i:20-21;i:22-23,p:24-24";
-//    private static final String ALTBEACON_LAYOUT = "m:2-3=beac,i:4-19,i:20-21;i:22-23,p:24-24,d:25-25";
     private BeaconManager beaconManager;
     private Region beaconRegion;
 
-    private DevicesListAdapter devicesListAdapter;
-
-    private BluetoothAdapter.LeScanCallback leScanCallback;
+    private boolean isScanning = false;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -85,28 +84,24 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
         devicesListAdapter = new DevicesListAdapter();
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-
         devicesRecycler.setLayoutManager(layoutManager);
         devicesRecycler.setAdapter(devicesListAdapter);
 
         bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
-
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
-
         leScanCallback = (bluetoothDevice, rssi, scanRecord) -> devicesListAdapter.addDevice(bluetoothDevice, rssi);
 
         beaconManager = BeaconManager.getInstanceForApplication(this);
         beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout(IBEACON_LAYOUT));
         beaconManager.bind(this);
 
-
         scanButton.setOnClickListener(v -> {
             if (!isScanning) {
-                scanButton.setText("STOP");
+                scanButton.setText(getString(R.string.stop));
                 isScanning = true;
                 startBeaconMonitoring();
                 bluetoothAdapter.startLeScan(leScanCallback);
@@ -114,16 +109,13 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                 bluetoothAdapter.stopLeScan(leScanCallback);
                 stopBeaconMonitoring();
                 isScanning = false;
-                scanButton.setText("SCAN");
+                scanButton.setText(R.string.scan);
                 devicesListAdapter.clear();
-                devicesRecycler.getAdapter().notifyDataSetChanged();
             }
         });
-
-
     }
 
-        @Override
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         beaconManager.unbind(this);
@@ -141,9 +133,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     private void startBeaconMonitoring() {
         try {
-            beaconRegion = new Region("e9131178-4833-41cd-af5b-9d132f4d3770",
-                    null, null, null);
-
+            beaconRegion = new Region(REGION_UUID, null, null, null);
             beaconManager.startRangingBeaconsInRegion(beaconRegion);
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -152,11 +142,9 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     private void stopBeaconMonitoring() {
         try {
-
             beaconManager.stopRangingBeaconsInRegion(beaconRegion);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
-
 }
