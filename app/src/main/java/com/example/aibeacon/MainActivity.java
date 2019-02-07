@@ -22,7 +22,7 @@ import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.Region;
 
-public class MainActivity extends AppCompatActivity implements BeaconConsumer {
+public class MainActivity extends AppCompatActivity implements MainView, BeaconConsumer {
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int MY_LOCATION_REQUEST_CODE = 11;
@@ -33,7 +33,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     private RecyclerView devicesRecycler;
     private Button scanButton;
 
-    private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
     private DevicesListAdapter devicesListAdapter;
     private BluetoothAdapter.LeScanCallback leScanCallback;
@@ -42,6 +41,8 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     private Region beaconRegion;
 
     private boolean isScanning = false;
+
+    private MainPresenter presenter;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -75,42 +76,16 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         devicesRecycler = findViewById(R.id.devicesRecycler);
         scanButton = findViewById(R.id.scanButton);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                    MY_LOCATION_REQUEST_CODE);
-        }
+        presenter = new MainPresenter();
+        presenter.attach(this);
 
-        devicesListAdapter = new DevicesListAdapter();
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        devicesRecycler.setLayoutManager(layoutManager);
-        devicesRecycler.setAdapter(devicesListAdapter);
-
-        bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothAdapter = bluetoothManager.getAdapter();
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        }
-        leScanCallback = (bluetoothDevice, rssi, scanRecord) -> devicesListAdapter.addDevice(bluetoothDevice, rssi);
-
-        beaconManager = BeaconManager.getInstanceForApplication(this);
-        beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout(IBEACON_LAYOUT));
         beaconManager.bind(this);
 
         scanButton.setOnClickListener(v -> {
             if (!isScanning) {
-                scanButton.setText(getString(R.string.stop));
-                isScanning = true;
-                startBeaconMonitoring();
-                bluetoothAdapter.startLeScan(leScanCallback);
+                presenter.startScan();
             } else {
-                bluetoothAdapter.stopLeScan(leScanCallback);
-                stopBeaconMonitoring();
-                isScanning = false;
-                scanButton.setText(R.string.scan);
-                devicesListAdapter.clear();
+                presenter.stopScan();
             }
         });
     }
@@ -118,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        presenter.detach();
         beaconManager.unbind(this);
     }
 
@@ -131,20 +107,64 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         });
     }
 
-    private void startBeaconMonitoring() {
+    @Override
+    public void checkForLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    MY_LOCATION_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void setDevicesRecycler() {
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        devicesRecycler.setLayoutManager(layoutManager);
+        devicesListAdapter = new DevicesListAdapter();
+        devicesRecycler.setAdapter(devicesListAdapter);
+    }
+
+    @Override
+    public void setBLE() {
+        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothAdapter = bluetoothManager.getAdapter();
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }
+        leScanCallback = (bluetoothDevice, rssi, scanRecord) -> devicesListAdapter.addDevice(bluetoothDevice, rssi);
+    }
+
+    @Override
+    public void setBeacon() {
+        beaconManager = BeaconManager.getInstanceForApplication(this);
+        beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout(IBEACON_LAYOUT));
+    }
+
+    @Override
+    public void startScan() {
+        scanButton.setText(getString(R.string.stop));
+        bluetoothAdapter.startLeScan(leScanCallback);
         try {
             beaconRegion = new Region(REGION_UUID, null, null, null);
             beaconManager.startRangingBeaconsInRegion(beaconRegion);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
+        isScanning = true;
     }
 
-    private void stopBeaconMonitoring() {
+    @Override
+    public void stopScan() {
+        scanButton.setText(R.string.scan);
+        bluetoothAdapter.stopLeScan(leScanCallback);
         try {
             beaconManager.stopRangingBeaconsInRegion(beaconRegion);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
+        isScanning = false;
+        devicesListAdapter.clear();
     }
 }
